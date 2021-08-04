@@ -9,6 +9,18 @@ output:
 
 
 
+## Load Libraries
+
+
+```r
+# load libraries
+
+# data wrangling
+library(tidyverse)
+library(here)
+library(glue)
+```
+
 
 ## Load the data
 
