@@ -1,7 +1,7 @@
 ---
 title: "Initial EDA"
 author: "Devi Annanda"
-date: "8/4/2021"
+date: "04 August 2021, Updated (08 August 2021)"
 output: 
   html_document:
     keep_md: TRUE
@@ -21,15 +21,12 @@ library(here)
 library(glue)
 ```
 
-
 ## Load the data
+
+Load raw dataset and save into an RData format. 
 
 
 ```r
-# load product and districts data
-products <- read_csv(here("data", "products_info.csv"))
-districts <- read_csv(here("data", "districts_info.csv"))
-
 # load engagement data
 
 # read csv with filename as column
@@ -41,15 +38,27 @@ engagement <-
     list.files(path = here("data/engagement_data"), 
                pattern = "*.csv",
                full.names = TRUE) %>% 
-  map_df(filename)
+  map_df(filename) %>% 
+  as_tibble()
 
 ## reference:
 ## https://stackoverflow.com/questions/44462494/include-csv-filename-when-reading-data-into-r-using-list-files
+
+# load product and districts data
+products <- read_csv(here("data", "products_info.csv"))
+districts <- read_csv(here("data", "districts_info.csv"))
+
+# compile dataset and save it into an RData format
+save(engagement, products, districts, file = here("data/data.RData"))
 ```
 
+## Reading the data
+
+In other rmarkdown file for this project, the raw data will be loaded by:
 
 
-
-
+```r
+load(file = here("data/data.RData"))
+```
 
 
