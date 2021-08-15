@@ -65,4 +65,3 @@ In other rmarkdown file for this project, the raw data will be loaded by:
 load(file = here("data/data.RData"))
 ```
 
-

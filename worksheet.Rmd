@@ -1,0 +1,128 @@
+---
+title: "Exploratory Data Analysis"
+author: "Devi Annanda"
+date: "15 August 2021, Updated `r format(Sys.Date(), '%d %B %Y')`"
+output: 
+  html_document:
+    keep_tex: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# load data
+load(file = here("data/data.RData"))
+
+# load library
+library(tidyverse)
+library(lubridate)
+```
+
+
+## Data Cleaning
+
+```{r}
+# combine dataset
+data_combined <- 
+  engagement %>% 
+  
+### JOINING
+  
+  # match reference variable for left_join
+  mutate_at(.vars = c("lp_id", "pct_access", "engagement_index", "district_id"),
+            as.numeric) %>% 
+  
+  mutate(district_id = as.double(district_id),
+         lp_id = as.double(lp_id)) %>% 
+  # left join
+  left_join(districts, by = "district_id") %>% 
+  left_join(products, by = c("lp_id" = "LP ID")) %>% 
+  
+### CLEANING
+  mutate(
+    
+    # missing values
+    state = na_if(state, "NaN"),
+    
+    # date
+    time = ymd(time)
+  )
+  
+```
+
+
+## Data Exploration
+
+### Missing Variables
+
+```{r}
+# check missing product name
+missing_product_name <- 
+  engagement %>% 
+  
+  # left-join
+  mutate_at(lp_id = as.numeric(lp_id)) %>% 
+  left_join(products, by = c("lp_id" = "LP ID")) %>% 
+  
+  # filter for id and product name
+  select(lp_id, `Product Name`) %>% 
+  
+  # filter for NA in product name
+  dplyr::filter(is.na(`Product Name`)) %>% 
+  
+  # count unique id and arrange in desc order
+  count(lp_id) %>% 
+  arrange(desc(n))
+
+
+# product id with missing product name
+nrow(missing_product_name)
+
+# total engagemnet observations with missing product name
+sum(missing_product_name$n)
+```
+
+
+### Primary Essential Function
+
+```{r}
+data_combined %>% 
+  count(`Primary Essential Function`) %>% 
+  ungroup() %>% 
+  arrange(desc(n))
+```
+
+Definition of
+
+- LC
+- SDO
+- CM
+
+### Provider/Company Name
+```{r}
+data_combined %>% 
+  count(`Provider/Company Name`) %>% 
+  ungroup() %>% 
+  arrange(desc(n))
+```
+
+### Product Name
+```{r}
+data_combined %>% 
+  count(`Product Name`) %>% 
+  ungroup() %>% 
+  arrange(desc(n))
+```
+
+### State
+```{r}
+data_combined %>% 
+  count(state) %>% 
+  ungroup() %>% 
+  arrange(desc(n))
+```
+
+
+## Data Visualization
+
+- Top company in each state
