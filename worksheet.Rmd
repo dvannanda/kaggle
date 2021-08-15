@@ -10,14 +10,18 @@ output:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 
-# load data
-load(file = here("data/data.RData"))
-
 # load library
 library(tidyverse)
 library(lubridate)
+
+library(maps)
+library(mapdata)
 ```
 
+```{r}
+# load data
+load(file = here("data/data.RData"))
+```
 
 ## Data Cleaning
 
@@ -47,7 +51,6 @@ data_combined <-
     # date
     time = ymd(time)
   )
-  
 ```
 
 
@@ -116,13 +119,95 @@ data_combined %>%
 
 ### State
 ```{r}
-data_combined %>% 
+state_data <- 
+  data_combined %>% 
   count(state) %>% 
   ungroup() %>% 
-  arrange(desc(n))
+  arrange(desc(n)) %>% 
+  mutate(state = tolower(state))
 ```
 
 
 ## Data Visualization
 
-- Top company in each state
+```{r}
+ts <-
+  data_combined %>% 
+  mutate(month = month(time, label = TRUE)) %>% 
+  count(month) %>% 
+  ungroup()
+
+ggplot(data = ts,
+       aes(x = month,
+           y = n)) +
+  geom_bar(stat = "identity")
+```
+
+
+```{r}
+state <- map_data("state") %>% 
+  left_join(state_data, by = c("region" = "state"))
+
+plot <- 
+  ggplot(data=state, aes(x=long, y=lat, fill=n, group=group, label = region)) + 
+  geom_polygon(color = "white") + 
+  theme(axis.title.x=element_blank(), axis.text.x=element_blank(), axis.ticks.x=element_blank(),
+        axis.title.y=element_blank(), axis.text.y=element_blank(), axis.ticks.y=element_blank(),
+        legend.position = "right") + 
+  labs(
+    title = "Count of engagemnet observations by state",
+    fill = "Count"
+  ) +
+  coord_fixed(1.3)
+
+plotly::ggplotly(plot)
+```
+
+```{r}
+engagement_by_state <- 
+  data_combined %>% 
+  group_by(state) %>%
+  summarise(avg_engagement = mean(engagement_index, na.rm = TRUE)) %>% 
+  ungroup() %>% 
+  mutate(state = tolower(state))
+
+engagement_by_state_map <- 
+  map_data("state") %>% 
+  left_join(engagement_by_state, by = c("region" = "state"))
+
+ggplot(data = engagement_by_state_map, 
+       aes(x=long, 
+           y=lat, 
+           fill=avg_engagement, 
+           group=group, 
+           label = region)) + 
+  geom_polygon(color = "white") + 
+  theme(axis.title.x=element_blank(), axis.text.x=element_blank(), axis.ticks.x=element_blank(),
+        axis.title.y=element_blank(), axis.text.y=element_blank(), axis.ticks.y=element_blank(),
+        legend.position = "right") + 
+  labs(
+    title = "Average engagement by state",
+    fill = "engagement"
+  ) +
+  coord_fixed(1.3)
+```
+
+```{r}
+state_data %>% 
+  left_join(engagement_by_state, by = "state") %>% 
+  dplyr::filter(! is.na(state)) %>% 
+  ggplot(aes(
+    x = n,
+    y = avg_engagement
+  )) +
+  geom_point() +
+  geom_text(aes(label = state), hjust = -0.1) +
+  scale_x_continuous(limits = c(0, 3000000)) +
+  labs(
+    y = "Average Engagement",
+    x = "Engagement Count",
+    title = "Relationship between Count and Average Engagement"
+  )
+
+```
+
